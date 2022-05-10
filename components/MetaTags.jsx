@@ -1,6 +1,6 @@
 import Head from "next/head";
 
-const MetaTags = ({ title = "GitHub clone", desc }) => {
+const MetaTags = ({ title = "Span Annotation", desc }) => {
   return (
     <Head>
       <title>{title}</title>
