@@ -1,1 +1,4 @@
 # span-annotation
+
+TaiwindCSS
+NextJS

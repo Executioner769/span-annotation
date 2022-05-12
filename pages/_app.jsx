@@ -1,7 +1,16 @@
 import "../styles/globals.css";
+import { NhostClient, NhostNextProvider } from "@nhost/nextjs";
 
-const MyApp = ({ Component, pageProps }) => {
-  return <Component {...pageProps} />;
-};
+const nhost = new NhostClient({
+  backendUrl: "https://ciofndttatidxalcwwdq.nhost.run",
+});
 
-export default MyApp;
+function SpanAnnotation({ Component, pageProps }) {
+  return (
+    <NhostNextProvider nhost={nhost} initial={pageProps.nhostSession}>
+      <Component {...pageProps} />
+    </NhostNextProvider>
+  );
+}
+
+export default SpanAnnotation;
