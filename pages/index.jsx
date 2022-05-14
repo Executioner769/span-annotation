@@ -1,14 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import AuthorizedAccess from "../components/layouts/AuthorizedAccess";
 import MetaTags from "../components/MetaTags";
 import Navbar from "../components/Navbar";
+import TextArea from "../components/TextArea";
 
 export default function Home() {
   const [span, setSpan] = useState(
     "Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum Some sample text lorem ipsum"
   );
 
-  const spanTextArea = useRef();
   const handleSubmit = (event) => {
     event.preventDefault();
     console.log("click");
@@ -22,27 +22,13 @@ export default function Home() {
     console.log(selection);
   };
 
-  useEffect(() => {
-    if (spanTextArea.current) {
-      spanTextArea.current.height = "auto";
-      console.log(spanTextArea.current.scrollHeight);
-      // spanTextArea.current.height = spanTextArea.current.scrollHeight + "px";
-    }
-  }, [span, spanTextArea]);
-
   return (
     <AuthorizedAccess>
       <MetaTags />
       <div className="min-h-screen flex flex-col gap-10 text-content-color">
         <Navbar />
         <div className="flex-1 md:mx-60">
-          <textarea
-            className="p-5 bg-black rounded-lg w-full"
-            onSelect={handleSelect}
-            readOnly={true}
-            ref={spanTextArea}
-            value={span}
-          />
+          <TextArea handleSelect={handleSelect} span={span} />
           <form onSubmit={handleSubmit}></form>
         </div>
       </div>
