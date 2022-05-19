@@ -8,7 +8,7 @@ const TextArea = ({ span, handleSelect }) => {
       textAreaRef.current.style.height =
         textAreaRef.current.scrollHeight + "px";
     }
-  }, [textAreaRef]);
+  }, [textAreaRef, span]);
 
   return (
     <textarea

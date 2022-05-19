@@ -1,39 +1,30 @@
-import { useState } from "react";
 import AuthorizedAccess from "../components/layouts/AuthorizedAccess";
 import MetaTags from "../components/MetaTags";
 import Navbar from "../components/Navbar";
 import TextArea from "../components/TextArea";
-import { gql, useLazyQuery, useQuery } from "@apollo/client";
+import { gql } from "@apollo/client";
+import { useEffect, useState } from "react";
+import { useNhostClient } from "@nhost/react";
+import { useAuthQuery } from "@nhost/react-apollo";
 
 export default function Home() {
-  const [span, setSpan] = useState("Loading...");
-
+  const nhost = useNhostClient();
+  const [span, setSpan] = useState("");
   const query1 = gql`
     query getSessionInformation {
       session_information {
         a_id
-        last_updated_text
+        text_to_annotate
+        dataset {
+          content
+        }
       }
     }
   `;
-  const query2 = gql`
-    query getText($t_id: Int!) {
-      dataset(where: { t_id: { _eq: $t_id } }) {
-        t_id
-        content
-      }
-    }
-  `;
-  const [getText, { textLoading }] = useLazyQuery(query2, {
+  const { client, loading, data, error, refetch } = useAuthQuery(query1, {
     onCompleted: (d) => {
-      setSpan(d.dataset[0].content);
-    },
-  });
-  const { sessionLoading } = useQuery(query1, {
-    onCompleted: (d) => {
-      getText({
-        variables: { t_id: d.session_information[0].last_updated_text + 1 },
-      });
+      console.log(d);
+      setSpan(d.session_information[0].dataset.content);
     },
   });
 
@@ -47,17 +38,47 @@ export default function Home() {
       event.target.selectionStart,
       event.target.selectionEnd
     );
-    console.log(selection);
+    // console.log(selection);
   };
+
+  const getcho = async () => {
+    const { data, error } = await nhost.graphql.request(query1);
+    console.log(data, error);
+    setSpan(data?.session_information[0].dataset.content);
+  };
+
+  useEffect(() => {
+    // getcho();
+  });
 
   return (
     <AuthorizedAccess>
       <MetaTags />
       <div className="min-h-screen flex flex-col gap-10 text-content-color">
         <Navbar />
-        <div className="flex-1 md:mx-60">
+        <div className="flex-1 md:mx-60 mx-10">
+          {/* {loading || error ? (
+            error ? (
+              console.log("wth", error)
+            ) : (
+              <p>Loading...</p>
+            )
+          ) : (
+            console.log(data)
+          )} */}
           <TextArea handleSelect={handleSelect} span={span} />
-          <form onSubmit={handleSubmit}></form>
+
+          <form onSubmit={handleSubmit}>
+            <label htmlFor="isToxic" className="flex items-center w-fit hover:">
+              <input
+                type="checkbox"
+                id="isToxic"
+                name="isToxic"
+                className="w-5 h-5 mr-3"
+              />
+              <span>Is the given span toxic?</span>
+            </label>
+          </form>
         </div>
       </div>
     </AuthorizedAccess>
