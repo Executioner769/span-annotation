@@ -11,6 +11,9 @@ export default function Home() {
   const router = useRouter();
   const screenSize = useRef();
   const [span, setSpan] = useState("");
+  const [isEntireTextToxic, setIsEntireTextToxic] = useState(false);
+  const [toxicSpans, setToxicSpans] = useState([]);
+  const [toxicSpanTextArr, setToxicSpanTextArr] = useState([]);
   const [isToxic, setIsToxic] = useState("No");
   const query1 = gql`
     query getSessionInformation {
@@ -23,25 +26,27 @@ export default function Home() {
       }
     }
   `;
+
   const { loading, error } = useAuthQuery(query1, {
     onCompleted: (d) => {
       setSpan(d.session_information[0].dataset.content);
     },
   });
 
-  const handleSubmit = (event) => {
-    event.preventDefault();
-    console.log("click");
-  };
-
   const handleSelect = (event) => {
-    if (isToxic === "Yes" && screenSize.current > 768) {
+    if (isToxic === "Yes" && screenSize.current > 768 && !isEntireTextToxic) {
       const selection = event.target.value.substring(
         event.target.selectionStart,
         event.target.selectionEnd
       );
-      console.log(selection);
+      if (selection !== "") {
+        setToxicSpanTextArr([...toxicSpanTextArr, selection]);
+      }
     }
+  };
+
+  const handleDelete = (index) => {
+    setToxicSpanTextArr(toxicSpanTextArr.filter((_v, i) => i !== index));
   };
 
   useEffect(() => {
@@ -78,13 +83,74 @@ export default function Home() {
                 <TextArea handleSelect={handleSelect} span={span} />
               </>
             )}
-            <button
-              hidden={screenSize.current > 768 || isToxic === "No"}
-              className="p-2 text-lg bg-tertiary"
-            >
-              Add
-            </button>
+            {screenSize.current < 768 &&
+            isToxic === "Yes" &&
+            !isEntireTextToxic ? (
+              <button className="p-2 text-lg bg-tertiary">Add</button>
+            ) : (
+              <></>
+            )}
           </div>
+          {isToxic === "Yes" ? (
+            <div className="self-center text-lg md:w-[56rem] w-full flex flex-col gap-3">
+              <div className="flex justify-between">
+                <span>Toxic spans: </span>
+                {toxicSpanTextArr.length > 0 ? (
+                  <button
+                    className="px-3 bg-danger rounded"
+                    onClick={() => setToxicSpanTextArr([])}
+                  >
+                    Remove all
+                  </button>
+                ) : (
+                  <></>
+                )}
+              </div>
+              {toxicSpanTextArr.length === 0 ? (
+                <>
+                  <p className="self-center">
+                    Is the entire text toxic? Selected:{" "}
+                    <span
+                      className={`rounded px-1 bg-${
+                        isEntireTextToxic ? "success" : "danger"
+                      }`}
+                    >
+                      {"" + isEntireTextToxic}
+                    </span>
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      className="bg-success rounded w-full py-1"
+                      onClick={() => setIsEntireTextToxic(true)}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      className="bg-danger rounded w-full py-1"
+                      onClick={() => setIsEntireTextToxic(false)}
+                    >
+                      No
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <></>
+              )}
+              {toxicSpanTextArr.map((span, index) => (
+                <div className="flex gap-3 w-full justify-between" key={index}>
+                  <span>{span + " "}</span>
+                  <button
+                    className="px-3 bg-danger rounded"
+                    onClick={() => handleDelete(index)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <></>
+          )}
 
           <p className="text-center md:text-2xl text-xl">
             Is the text given above toxic? Selected:{" "}

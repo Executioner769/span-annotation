@@ -83,7 +83,7 @@ const Login = () => {
             </div>
             <button
               type="submit"
-              className={`bg-secondary rounded-md py-1${
+              className={`bg-success rounded-md py-1${
                 isLoading ? " bg-opacity-70" : ""
               }`}
               disabled={isLoading}
