@@ -12,7 +12,7 @@ const TextArea = ({ span, handleSelect }) => {
 
   return (
     <textarea
-      className="p-5 bg-black rounded-lg w-full"
+      className="px-5 py-7 md:text-3xl text-2xl md:leading-relaxed bg-black rounded-lg w-full"
       onSelect={handleSelect}
       readOnly={true}
       ref={textAreaRef}

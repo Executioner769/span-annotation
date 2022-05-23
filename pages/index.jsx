@@ -3,13 +3,15 @@ import MetaTags from "../components/MetaTags";
 import Navbar from "../components/Navbar";
 import TextArea from "../components/TextArea";
 import { gql } from "@apollo/client";
-import { useEffect, useState } from "react";
-import { useNhostClient } from "@nhost/react";
+import { useState, useEffect, useRef } from "react";
 import { useAuthQuery } from "@nhost/react-apollo";
+import { useRouter } from "next/router";
 
 export default function Home() {
-  const nhost = useNhostClient();
+  const router = useRouter();
+  const screenSize = useRef();
   const [span, setSpan] = useState("");
+  const [isToxic, setIsToxic] = useState("No");
   const query1 = gql`
     query getSessionInformation {
       session_information {
@@ -21,9 +23,8 @@ export default function Home() {
       }
     }
   `;
-  const { client, loading, data, error, refetch } = useAuthQuery(query1, {
+  const { loading, error } = useAuthQuery(query1, {
     onCompleted: (d) => {
-      console.log(d);
       setSpan(d.session_information[0].dataset.content);
     },
   });
@@ -34,51 +35,81 @@ export default function Home() {
   };
 
   const handleSelect = (event) => {
-    const selection = event.target.value.substring(
-      event.target.selectionStart,
-      event.target.selectionEnd
-    );
-    // console.log(selection);
-  };
-
-  const getcho = async () => {
-    const { data, error } = await nhost.graphql.request(query1);
-    console.log(data, error);
-    setSpan(data?.session_information[0].dataset.content);
+    if (isToxic === "Yes" && screenSize.current > 768) {
+      const selection = event.target.value.substring(
+        event.target.selectionStart,
+        event.target.selectionEnd
+      );
+      console.log(selection);
+    }
   };
 
   useEffect(() => {
-    // getcho();
+    screenSize.current = window.innerWidth;
   });
 
   return (
     <AuthorizedAccess>
       <MetaTags />
-      <div className="min-h-screen flex flex-col gap-10 text-content-color">
+      <div className="min-h-screen flex flex-col gap-5 text-content-color">
         <Navbar />
-        <div className="flex-1 md:mx-60 mx-10">
-          {/* {loading || error ? (
-            error ? (
-              console.log("wth", error)
-            ) : (
-              <p>Loading...</p>
-            )
+        <div className="flex-1 flex flex-col gap-5 md:mx-60 mx-10">
+          {isToxic === "Yes" ? (
+            <p className="md:text-2xl text-md text-center">{`Please select the words which make the text toxic${
+              screenSize.current < 768
+                ? ' (press the "Add" button after selecting the words)'
+                : ""
+            }`}</p>
           ) : (
-            console.log(data)
-          )} */}
-          <TextArea handleSelect={handleSelect} span={span} />
+            <></>
+          )}
+          <div className="md:flex-grow-0 flex-1 flex flex-col gap-3 md:justify-start justify-center">
+            {loading || error ? (
+              error ? (
+                <>
+                  <p>Some Error occured. Refreshing the page...</p>
+                  {setTimeout(() => router.reload(), 1000)}
+                </>
+              ) : (
+                <TextArea handleSelect={handleSelect} span={"Loading..."} />
+              )
+            ) : (
+              <>
+                <TextArea handleSelect={handleSelect} span={span} />
+              </>
+            )}
+            <button
+              hidden={screenSize.current > 768 || isToxic === "No"}
+              className="p-2 text-lg bg-tertiary"
+            >
+              Add
+            </button>
+          </div>
 
-          <form onSubmit={handleSubmit}>
-            <label htmlFor="isToxic" className="flex items-center w-fit hover:">
-              <input
-                type="checkbox"
-                id="isToxic"
-                name="isToxic"
-                className="w-5 h-5 mr-3"
-              />
-              <span>Is the given span toxic?</span>
-            </label>
-          </form>
+          <p className="text-center md:text-2xl text-xl">
+            Is the text given above toxic? Selected:{" "}
+            <span
+              className={`rounded px-1 bg-${
+                isToxic === "Yes" ? "success" : "danger"
+              }`}
+            >
+              {isToxic}
+            </span>
+          </p>
+          <div className="flex justify-between mb-7 gap-3">
+            <button
+              className="bg-success py-2 w-full rounded text-2xl"
+              onClick={() => setIsToxic("Yes")}
+            >
+              Yes
+            </button>
+            <button
+              className="bg-danger py-2 w-full rounded text-2xl"
+              onClick={() => setIsToxic("No")}
+            >
+              No
+            </button>
+          </div>
         </div>
       </div>
     </AuthorizedAccess>
