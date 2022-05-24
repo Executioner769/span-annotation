@@ -1,6 +1,6 @@
 import { useRef, useEffect } from "react";
 
-const TextArea = ({ span, handleSelect }) => {
+const TextArea = ({ span, handleSelect, id = "spanText" }) => {
   const textAreaRef = useRef();
 
   useEffect(() => {
@@ -13,6 +13,7 @@ const TextArea = ({ span, handleSelect }) => {
   return (
     <textarea
       className="px-5 py-7 md:text-3xl text-2xl md:leading-relaxed bg-black rounded-lg w-full"
+      id={id}
       onSelect={handleSelect}
       readOnly={true}
       ref={textAreaRef}

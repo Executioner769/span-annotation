@@ -6,6 +6,10 @@ import { gql } from "@apollo/client";
 import { useState, useEffect, useRef } from "react";
 import { useAuthQuery } from "@nhost/react-apollo";
 import { useRouter } from "next/router";
+import { useAuthMutation } from "../libs/useAuthMutation";
+
+import { range } from "../libs/rangefunction";
+import { useUserId } from "@nhost/react";
 
 export default function Home() {
   const router = useRouter();
@@ -15,6 +19,8 @@ export default function Home() {
   const [toxicSpans, setToxicSpans] = useState([]);
   const [toxicSpanTextArr, setToxicSpanTextArr] = useState([]);
   const [isToxic, setIsToxic] = useState("No");
+  const userId = useUserId();
+
   const query1 = gql`
     query getSessionInformation {
       session_information {
@@ -26,12 +32,50 @@ export default function Home() {
       }
     }
   `;
+  const query2 = gql`
+    mutation submitAnnotation(
+      $a_id: uuid
+      $t_id: Int
+      $text: String
+      $label: String
+      $span: jsonb
+    ) {
+      insert_annotations(
+        objects: { t_id: $t_id, content: $text, label: $label, span: $span }
+      ) {
+        returning {
+          a_id
+          t_id
+          content
+          label
+          span
+        }
+      }
+      update_session_information(
+        _inc: { text_to_annotate: 1 }
+        where: { a_id: { _eq: $a_id } }
+      ) {
+        returning {
+          a_id
+          text_to_annotate
+        }
+      }
+    }
+  `;
 
-  const { loading, error } = useAuthQuery(query1, {
+  const { loading, data, error } = useAuthQuery(query1, {
     onCompleted: (d) => {
       setSpan(d.session_information[0].dataset.content);
     },
   });
+
+  const [saveAnnotation, { mutateData, mutateLoading, mutateError }] =
+    useAuthMutation(query2, {
+      onCompleted: (d) => {
+        console.log(d);
+      },
+      refetchQueries: [query1],
+    });
 
   const handleSelect = (event) => {
     if (isToxic === "Yes" && screenSize.current > 768 && !isEntireTextToxic) {
@@ -40,13 +84,63 @@ export default function Home() {
         event.target.selectionEnd
       );
       if (selection !== "") {
+        setToxicSpans(
+          [
+            ...toxicSpans,
+            [event.target.selectionStart, event.target.selectionEnd],
+          ].sort()
+        );
         setToxicSpanTextArr([...toxicSpanTextArr, selection]);
       }
     }
   };
 
   const handleDelete = (index) => {
+    setToxicSpans(toxicSpans.filter((_v, i) => i !== index));
     setToxicSpanTextArr(toxicSpanTextArr.filter((_v, i) => i !== index));
+  };
+
+  const handleAdd = () => {
+    const textArea = document.getElementById("spanText");
+    const selection = textArea.value.substring(
+      textArea.selectionStart,
+      textArea.selectionEnd
+    );
+    if (selection !== "") {
+      setToxicSpans(
+        [...toxicSpans, [textArea.selectionStart, textArea.selectionEnd]].sort()
+      );
+      setToxicSpanTextArr([...toxicSpanTextArr, selection]);
+    }
+  };
+
+  const handleSubmit = () => {
+    let spanArr = toxicSpans.reduce(
+      (prevArr, currentValue) => [
+        ...prevArr,
+        ...range(currentValue[0], currentValue[1]),
+      ],
+      []
+    );
+    spanArr = [...new Set(spanArr.sort((a, b) => a - b))];
+    saveAnnotation({
+      variables: {
+        a_id: userId,
+        t_id: data.session_information[0].text_to_annotate,
+        text: span,
+        label: isToxic.toLowerCase(),
+        span: spanArr,
+      },
+    });
+    console.log({
+      variables: {
+        a_id: userId,
+        t_id: data.session_information[0].text_to_annotate,
+        text: span,
+        label: isToxic.toLowerCase(),
+        span: spanArr,
+      },
+    });
   };
 
   useEffect(() => {
@@ -79,14 +173,14 @@ export default function Home() {
                 <TextArea handleSelect={handleSelect} span={"Loading..."} />
               )
             ) : (
-              <>
-                <TextArea handleSelect={handleSelect} span={span} />
-              </>
+              <TextArea handleSelect={handleSelect} span={span} />
             )}
             {screenSize.current < 768 &&
             isToxic === "Yes" &&
             !isEntireTextToxic ? (
-              <button className="p-2 text-lg bg-tertiary">Add</button>
+              <button className="p-2 text-lg bg-tertiary" onClick={handleAdd}>
+                Add
+              </button>
             ) : (
               <></>
             )}
@@ -177,6 +271,14 @@ export default function Home() {
             </button>
           </div>
         </div>
+      </div>
+      <div className="md:mx-60 mx-10 my-3">
+        <button
+          className="bg-tertiary w-full p-3 rounded text-content-color text-2xl"
+          onClick={handleSubmit}
+        >
+          Submit
+        </button>
       </div>
     </AuthorizedAccess>
   );
