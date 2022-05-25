@@ -69,13 +69,9 @@ export default function Home() {
     },
   });
 
-  const [saveAnnotation, { mutateData, mutateLoading, mutateError }] =
-    useAuthMutation(query2, {
-      onCompleted: (d) => {
-        console.log(d);
-      },
-      refetchQueries: [query1],
-    });
+  const [saveAnnotation, {}] = useAuthMutation(query2, {
+    refetchQueries: [query1],
+  });
 
   const handleSelect = (event) => {
     if (isToxic === "Yes" && screenSize.current > 768 && !isEntireTextToxic) {
@@ -115,14 +111,17 @@ export default function Home() {
   };
 
   const handleSubmit = () => {
-    let spanArr = toxicSpans.reduce(
-      (prevArr, currentValue) => [
-        ...prevArr,
-        ...range(currentValue[0], currentValue[1]),
-      ],
-      []
-    );
-    spanArr = [...new Set(spanArr.sort((a, b) => a - b))];
+    let spanArr = [];
+    if (isToxic === "Yes") {
+      spanArr = toxicSpans.reduce(
+        (prevArr, currentValue) => [
+          ...prevArr,
+          ...range(currentValue[0], currentValue[1]),
+        ],
+        []
+      );
+      spanArr = [...new Set(spanArr.sort((a, b) => a - b))];
+    } else if (isEntireTextToxic) spanArr = [0, span.length];
     saveAnnotation({
       variables: {
         a_id: userId,
@@ -132,15 +131,10 @@ export default function Home() {
         span: spanArr,
       },
     });
-    console.log({
-      variables: {
-        a_id: userId,
-        t_id: data.session_information[0].text_to_annotate,
-        text: span,
-        label: isToxic.toLowerCase(),
-        span: spanArr,
-      },
-    });
+    setIsToxic("No");
+    setIsEntireTextToxic(false);
+    setToxicSpanTextArr([]);
+    setToxicSpans([]);
   };
 
   useEffect(() => {
@@ -271,14 +265,14 @@ export default function Home() {
             </button>
           </div>
         </div>
-      </div>
-      <div className="md:mx-60 mx-10 my-3">
-        <button
-          className="bg-tertiary w-full p-3 rounded text-content-color text-2xl"
-          onClick={handleSubmit}
-        >
-          Submit
-        </button>
+        <div className="md:mx-60 mx-10 my-5">
+          <button
+            className="bg-tertiary w-full p-3 rounded text-content-color text-2xl"
+            onClick={handleSubmit}
+          >
+            Submit
+          </button>
+        </div>
       </div>
     </AuthorizedAccess>
   );
