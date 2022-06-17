@@ -26,6 +26,7 @@ export default function Home() {
       session_information {
         a_id
         text_to_annotate
+        dataset_id
         dataset {
           content
         }
@@ -36,12 +37,19 @@ export default function Home() {
     mutation submitAnnotation(
       $a_id: uuid
       $t_id: Int
+      $dataset_id: Int
       $text: String
       $label: String
       $span: jsonb
     ) {
       insert_annotations(
-        objects: { t_id: $t_id, content: $text, label: $label, span: $span }
+        objects: {
+          t_id: $t_id
+          dataset_id: $dataset_id
+          content: $text
+          label: $label
+          span: $span
+        }
       ) {
         returning {
           a_id
@@ -126,6 +134,7 @@ export default function Home() {
       variables: {
         a_id: userId,
         t_id: data.session_information[0].text_to_annotate,
+        dataset_id: data.session_information[0].dataset_id,
         text: span,
         label: isToxic.toLowerCase(),
         span: spanArr,
@@ -160,6 +169,7 @@ export default function Home() {
             {loading || error ? (
               error ? (
                 <>
+                  {console.log(error)}
                   <p>Some Error occured. Refreshing the page...</p>
                   {setTimeout(() => router.reload(), 1000)}
                 </>
