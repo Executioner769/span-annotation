@@ -130,6 +130,14 @@ export default function Home() {
       );
       spanArr = [...new Set(spanArr.sort((a, b) => a - b))];
     } else if (isEntireTextToxic) spanArr = [0, span.length];
+    console.log({
+      a_id: userId,
+      t_id: data.session_information[0].text_to_annotate,
+      dataset_id: data.session_information[0].dataset_id,
+      text: span,
+      label: isToxic.toLowerCase(),
+      span: spanArr,
+    });
     saveAnnotation({
       variables: {
         a_id: userId,
